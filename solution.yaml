@@ -1,0 +1,13 @@
+apiVersion: solution.sap/v1
+kind: Solution
+
+metadata:
+  name: btp-usage-agent-43674
+  version: 1.0.0
+  description: >
+    A conversational AI agent that answers natural-language questions about
+    SAP BTP account usage and cost by querying the BTP Usage Data Management
+    Service APIs. Supports both SAP AI Core and OpenAI-compatible LLM backends.
+
+assets:
+  - ref: ./assets/btp-usage-agent/asset.yaml

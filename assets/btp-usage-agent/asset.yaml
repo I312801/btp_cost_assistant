@@ -1,0 +1,52 @@
+apiVersion: asset.sap/v1
+kind: Asset
+
+metadata:
+  name: btp-usage-agent
+  version: 1.0.0
+
+type: agent
+
+agentCard:
+  name: BTP Cost & Usage Intelligence Agent
+  version: 1.0.0
+  description: >
+    Answers natural-language questions about SAP BTP account usage and cost
+    by calling the BTP Usage Data Management Service APIs. Supports queries
+    such as "show me subaccount usage this week", "what did we spend last
+    month?", or "show monthly global account cost for May 2026".
+  capabilities:
+    skills:
+      - name: btp-usage-query
+        description: >
+          Query SAP BTP subaccount or global account usage and cost data
+          for a given time period using natural language.
+  authentication:
+    type: bearer
+  supportedContentTypes:
+    - application/json
+  streaming:
+    enabled: false
+
+container:
+  buildPath: .
+  port: 5001
+
+probes:
+  startup:
+    path: /.well-known/agent.json
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 18
+  liveness:
+    path: /.well-known/agent.json
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: /.well-known/agent.json
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
