@@ -1,0 +1,23 @@
+# =============================================================================
+# Root .gitignore
+# =============================================================================
+
+# Local environment files — contain real credentials, never commit
+**/.env
+assets/**/.env
+assets/**/app/.env
+
+# Deployment result (contains solution IDs)
+deploy_result.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+.venv/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db

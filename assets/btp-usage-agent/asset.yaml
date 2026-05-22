@@ -3,13 +3,13 @@ kind: Asset
 
 metadata:
   name: btp-usage-agent
-  version: 1.0.2
+  version: 1.0.3
 
 type: agent
 
 agentCard:
   name: BTP Cost & Usage Intelligence Agent
-  version: 1.0.2
+  version: 1.0.3
   description: >
     Answers natural-language questions about SAP BTP account usage and cost
     by calling the BTP Usage Data Management Service APIs. Supports queries
@@ -31,37 +31,6 @@ agentCard:
 container:
   buildPath: .
   port: 5001
-  env:
-    # LLM backend: Joule integrates AI Core internally — no separate AICORE_* vars needed
-    - name: LLM_BACKEND
-      value: joule
-    - name: JOULE_MODEL
-      value: gpt-4o
-    # BTP Usage Data Management Service credentials
-    - name: BTP_UAS_URL
-      secretRef:
-        name: cred-customer-agent
-        key: BTP_UAS_URL
-    - name: BTP_AUTH_URL
-      secretRef:
-        name: cred-customer-agent
-        key: BTP_AUTH_URL
-    - name: BTP_CLIENT_ID
-      secretRef:
-        name: cred-customer-agent
-        key: BTP_CLIENT_ID
-    - name: BTP_CLIENT_SECRET
-      secretRef:
-        name: cred-customer-agent
-        key: BTP_CLIENT_SECRET
-    - name: BTP_SUBACCOUNT_ID
-      secretRef:
-        name: cred-customer-agent
-        key: BTP_SUBACCOUNT_ID
-    - name: BTP_GLOBAL_ACCOUNT_ID
-      secretRef:
-        name: cred-customer-agent
-        key: BTP_GLOBAL_ACCOUNT_ID
 
 probes:
   startup:

@@ -12,7 +12,9 @@ COPY app/ .
 
 # Environment
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    LLM_BACKEND=joule \
+    JOULE_MODEL=gpt-4o
 
 # Health probe and A2A server port
 EXPOSE 5001

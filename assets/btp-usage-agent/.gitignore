@@ -1,5 +1,6 @@
-# Local environment — contains real credentials, never commit
+# Local environment files — contain real credentials, never commit
 .env
+app/.env
 
 # Python
 __pycache__/

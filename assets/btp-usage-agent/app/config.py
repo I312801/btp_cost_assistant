@@ -28,16 +28,31 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Path where the platform mounts the cred-customer-agent secret as files
+_SECRET_MOUNT = "/etc/ums/credentials"
+
+
+def _secret(key: str, default: str = "") -> str:
+    """Read a value from env var, falling back to the mounted secret file."""
+    val = os.getenv(key)
+    if val:
+        return val
+    path = os.path.join(_SECRET_MOUNT, key)
+    if os.path.isfile(path):
+        with open(path) as f:
+            return f.read().strip()
+    return default
+
 
 class BTPConfig:
     """BTP Usage Data Management Service configuration."""
 
-    UAS_BASE_URL: str = os.getenv("BTP_UAS_URL", "https://uas-reporting.cfapps.eu10.hana.ondemand.com")
-    AUTH_URL: str = os.getenv("BTP_AUTH_URL", "")
-    CLIENT_ID: str = os.getenv("BTP_CLIENT_ID", "")
-    CLIENT_SECRET: str = os.getenv("BTP_CLIENT_SECRET", "")
-    SUBACCOUNT_ID: str = os.getenv("BTP_SUBACCOUNT_ID", "")
-    GLOBAL_ACCOUNT_ID: str = os.getenv("BTP_GLOBAL_ACCOUNT_ID", "")
+    UAS_BASE_URL: str = _secret("BTP_UAS_URL", "https://uas-reporting.cfapps.eu10.hana.ondemand.com")
+    AUTH_URL: str = _secret("BTP_AUTH_URL")
+    CLIENT_ID: str = _secret("BTP_CLIENT_ID")
+    CLIENT_SECRET: str = _secret("BTP_CLIENT_SECRET")
+    SUBACCOUNT_ID: str = _secret("BTP_SUBACCOUNT_ID")
+    GLOBAL_ACCOUNT_ID: str = _secret("BTP_GLOBAL_ACCOUNT_ID")
 
     @classmethod
     def validate(cls) -> None:
