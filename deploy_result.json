@@ -1,9 +1,5 @@
 {
-  "solution_id": "608a7501-f2dd-47b7-88bd-2c23da95365b",
-  "agent_url": "https://608a7501-e22403ae.sap3eu12.c.run.ai.cloud.sap",
-  "helm_release": "sln-608a7501-asset-e22403ae",
-  "asset_hash": "e22403ae",
-  "namespace": "sln-608a7501",
-  "job_id": "7e278273-596c-41e7-8854-72b02a8bb34e",
-  "external_job_id": "b44ca265-83dd-49b3-a908-fe5f5ed07385"
+  "solution_id": "btp-account-usage-b23dc",
+  "deployment_job_id": "dc239b38-109a-47ec-87a3-07cc172d4ba3",
+  "status": "completed"
 }

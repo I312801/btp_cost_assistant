@@ -3,51 +3,58 @@ kind: Asset
 
 metadata:
   name: btp-usage-agent
-  version: 1.0.3
+  version: 1.0.0
 
 type: agent
-
-agentCard:
-  name: BTP Cost & Usage Intelligence Agent
-  version: 1.0.3
-  description: >
-    Answers natural-language questions about SAP BTP account usage and cost
-    by calling the BTP Usage Data Management Service APIs. Supports queries
-    such as "show me subaccount usage this week", "what did we spend last
-    month?", or "show monthly global account cost for May 2026".
-  capabilities:
-    skills:
-      - name: btp-usage-query
-        description: >
-          Query SAP BTP subaccount or global account usage and cost data
-          for a given time period using natural language.
-  authentication:
-    type: bearer
-  supportedContentTypes:
-    - application/json
-  streaming:
-    enabled: false
 
 container:
   buildPath: .
   port: 5001
 
+agentCard:
+  name: BTP Usage Agent
+  version: 1.0.0
+  description: >
+    Monitors SAP BTP account usage, costs, and entitlements across subaccounts.
+    Ask questions like "What are my top services by cost this month?" or
+    "Which subaccounts are near their entitlement limits?"
+  capabilities:
+    streaming: false
+    pushNotifications: false
+    stateTransitionHistory: false
+  defaultInputModes:
+    - text/plain
+  defaultOutputModes:
+    - text/plain
+  skills:
+    - id: btp-usage-query
+      name: BTP Usage Query
+      description: Query BTP service consumption and cost data for a subaccount or globally
+    - id: entitlement-check
+      name: Entitlement Check
+      description: Check entitlement utilization and flag quota gaps across subaccounts
+    - id: cost-breakdown
+      name: Cost Breakdown
+      description: Break down BTP costs by service, plan, and subaccount for a given month
+  authentication:
+    schemes:
+      - bearer
+
 probes:
   startup:
     path: /.well-known/agent.json
-    initialDelaySeconds: 10
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 30      # 30 × 10s = 5 min total startup window
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 18
   liveness:
     path: /.well-known/agent.json
-    initialDelaySeconds: 60
-    periodSeconds: 15
+    initialDelaySeconds: 15
+    periodSeconds: 10
     timeoutSeconds: 5
     failureThreshold: 3
   readiness:
     path: /.well-known/agent.json
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6       # 30s + 60s = 90s total tolerance
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3

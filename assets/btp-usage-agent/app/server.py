@@ -139,12 +139,12 @@ async def send_task(request: Request):
 
     try:
         agent = _get_agent()
-        answer = agent.chat(user_text)
+        answer = await agent.run(user_text)   # run() is async; chat() does not exist
     except EnvironmentError as exc:
         logger.error("Agent configuration error: %s", exc)
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:
-        logger.exception("Error during agent.chat()")
+        logger.exception("Error during agent.run()")
         raise HTTPException(status_code=500, detail=str(exc))
 
     return JSONResponse(
