@@ -2,19 +2,22 @@
 Configuration for BTP Usage Agent.
 Loads settings from environment variables or a local .env file.
 
-Two LLM backends are supported:
+Three LLM backends are supported:
 
-  1. SAP AI Core  (default - OAuth2.0 Client Credentials via XSUAA)
+  1. Joule / SAP AI Core Orchestration  (default)
+       LLM_BACKEND=joule
+       Uses the SAP AI Core Orchestration Service — the same engine that
+       powers SAP Joule. Credentials are shared with the aicore backend.
+       AICORE_AUTH_URL, AICORE_CLIENT_ID, AICORE_CLIENT_SECRET,
+       AICORE_API_URL, AICORE_RESOURCE_GROUP are read by the SDK automatically.
+       JOULE_MODEL=gpt-4o   (or any model deployed in your AI Core instance)
+
+  2. SAP AI Core native OpenAI-compatible client
        LLM_BACKEND=aicore
-       AICORE_AUTH_URL=https://<tenant>.authentication.<region>.hana.ondemand.com
-       AICORE_CLIENT_ID=<clientid>
-       AICORE_CLIENT_SECRET=<clientsecret>
-       AICORE_API_URL=https://api.ai.<region>.ml.hana.ondemand.com
-       AICORE_DEPLOYMENT_ID=<deployment-id>   # optional: leave empty for predefined models
-       AICORE_MODEL=<model-name>              # e.g. gpt-4o
-       AICORE_RESOURCE_GROUP=default
+       AICORE_AUTH_URL, AICORE_CLIENT_ID, AICORE_CLIENT_SECRET,
+       AICORE_API_URL, AICORE_DEPLOYMENT_ID, AICORE_MODEL, AICORE_RESOURCE_GROUP
 
-  2. OpenAI (or any OpenAI-compatible endpoint, e.g. LiteLLM)
+  3. OpenAI (or any OpenAI-compatible endpoint, e.g. LiteLLM)
        LLM_BACKEND=openai
        LLM_API_KEY=sk-...
        LLM_BASE_URL=https://api.openai.com/v1
@@ -55,16 +58,28 @@ class LLMConfig:
     """
     LLM backend configuration.
 
-    Set LLM_BACKEND=aicore  (default) to use SAP AI Core via XSUAA OAuth2.0.
+    Set LLM_BACKEND=joule   (default) to use the SAP AI Core Orchestration
+                              Service — the same engine that powers SAP Joule.
+    Set LLM_BACKEND=aicore  to use the SAP AI Core native OpenAI-compatible client.
     Set LLM_BACKEND=openai  to use OpenAI or any OpenAI-compatible endpoint.
     """
 
-    BACKEND: str = os.getenv("LLM_BACKEND", "aicore").lower()
+    BACKEND: str = os.getenv("LLM_BACKEND", "joule").lower()
 
-    # -- SAP AI Core (read by generative-ai-hub-sdk automatically) ------------
+    # -- SAP AI Core Orchestration / Joule ------------------------------------
     # AICORE_AUTH_URL, AICORE_CLIENT_ID, AICORE_CLIENT_SECRET, AICORE_API_URL,
-    # AICORE_RESOURCE_GROUP, AICORE_DEPLOYMENT_ID are read directly from env
-    # by the SDK — no need to redeclare them here.
+    # AICORE_RESOURCE_GROUP are read directly from env by the SDK.
+    JOULE_MODEL: str = os.getenv("JOULE_MODEL", "gpt-4o")
+
+    # -- SAP AI Core shared credentials (used by both joule and aicore) -------
+    AICORE_API_URL: str = os.getenv("AICORE_API_URL", "")
+    AICORE_AUTH_URL: str = os.getenv("AICORE_AUTH_URL", "")
+    AICORE_CLIENT_ID: str = os.getenv("AICORE_CLIENT_ID", "")
+    AICORE_CLIENT_SECRET: str = os.getenv("AICORE_CLIENT_SECRET", "")
+    AICORE_RESOURCE_GROUP: str = os.getenv("AICORE_RESOURCE_GROUP", "default")
+
+    # -- SAP AI Core native client --------------------------------------------
+    AICORE_DEPLOYMENT_ID: str = os.getenv("AICORE_DEPLOYMENT_ID", "")
     AICORE_MODEL: str = os.getenv("AICORE_MODEL", "gpt-4o")
 
     # -- OpenAI / generic OpenAI-compatible -----------------------------------
@@ -74,13 +89,17 @@ class LLMConfig:
 
     @classmethod
     def validate(cls) -> None:
-        if cls.BACKEND == "aicore":
+        if cls.BACKEND in {"joule", "aicore"}:
             # generative-ai-hub-sdk validates AICORE_* credentials internally.
-            # No pre-flight check needed here.
             pass
-        else:
+        elif cls.BACKEND == "openai":
             if not cls.OPENAI_API_KEY:
                 raise EnvironmentError(
                     "Missing required environment variable: LLM_API_KEY\n"
-                    "Set LLM_BACKEND=aicore to use SAP AI Core instead."
+                    "Set LLM_BACKEND=joule to use SAP Joule / AI Core Orchestration instead."
                 )
+        else:
+            raise ValueError(
+                f"Unsupported LLM_BACKEND: '{cls.BACKEND}'. "
+                "Valid values are: 'joule', 'aicore', 'openai'."
+            )

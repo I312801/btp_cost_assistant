@@ -1,0 +1,17 @@
+# Never copy local secrets into the Docker image
+.env
+app/.env
+*.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Dev/test artifacts
+.pytest_cache/
+*.egg-info/
+dist/
+build/

@@ -33,7 +33,8 @@ def get_access_token(force_refresh: bool = False) -> str:
     if not force_refresh and _token_cache["access_token"] and now < _token_cache["expires_at"]:
         return _token_cache["access_token"]  # type: ignore[return-value]
 
-    token_url = f"{BTPConfig.AUTH_URL.rstrip('/')}/oauth/token"
+    # BTP_AUTH_URL is the full token endpoint URL (already includes /oauth/token)
+    token_url = BTPConfig.AUTH_URL
     logger.debug("Fetching new OAuth2.0 token from %s", token_url)
 
     response = requests.post(

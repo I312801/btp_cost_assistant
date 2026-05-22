@@ -187,9 +187,11 @@ class BTPUsageAgent:
     Conversational agent that uses LLM tool-calling to answer BTP usage questions.
     Maintains a rolling conversation history for multi-turn interactions.
 
-    Supports two LLM backends (set LLM_BACKEND in .env):
+    Supports three LLM backends (set LLM_BACKEND in .env):
+      - joule   : SAP AI Core Orchestration Service — the engine behind SAP Joule
+                  (default; token auto-refreshed per call via XSUAA)
+      - aicore  : SAP AI Core native OpenAI-compatible client (XSUAA OAuth2.0)
       - openai  : static API key, any OpenAI-compatible endpoint (including LiteLLM)
-      - aicore  : SAP AI Core via XSUAA OAuth2.0 (token auto-refreshed per call)
     """
 
     def __init__(self) -> None:

@@ -3,10 +3,9 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (fastapi, uvicorn[standard] and all others are in requirements.txt)
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir "fastapi>=0.111.0" "uvicorn[standard]>=0.29.0"
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source directly into WORKDIR so uvicorn can find server:app
 COPY app/ .
