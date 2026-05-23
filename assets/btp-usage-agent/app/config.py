@@ -4,24 +4,20 @@ Loads settings from environment variables or a local .env file.
 
 Three LLM backends are supported:
 
-  1. Joule / SAP AI Core Orchestration  (default)
-       LLM_BACKEND=joule
-       Uses the SAP AI Core Orchestration Service — the same engine that
-       powers SAP Joule. Credentials are shared with the aicore backend.
-       AICORE_AUTH_URL, AICORE_CLIENT_ID, AICORE_CLIENT_SECRET,
-       AICORE_API_URL, AICORE_RESOURCE_GROUP are read by the SDK automatically.
-       JOULE_MODEL=gpt-4o   (or any model deployed in your AI Core instance)
-
-  2. SAP AI Core native OpenAI-compatible client
+  1. SAP AI Core (default, recommended)
        LLM_BACKEND=aicore
-       AICORE_AUTH_URL, AICORE_CLIENT_ID, AICORE_CLIENT_SECRET,
-       AICORE_API_URL, AICORE_DEPLOYMENT_ID, AICORE_MODEL, AICORE_RESOURCE_GROUP
+       Credentials: AICORE_SERVICE_KEY (JSON) or individual AICORE_* fields.
+
+  2. joule — Alias for aicore, same credentials.
+       LLM_BACKEND=joule
 
   3. OpenAI (or any OpenAI-compatible endpoint, e.g. LiteLLM)
        LLM_BACKEND=openai
        LLM_API_KEY=sk-...
        LLM_BASE_URL=https://api.openai.com/v1
-       LLM_MODEL=gpt-4o
+
+  Model selection (all backends):
+       AICORE_MODEL=gpt-4o   — controls the model for aicore/joule backends.
 """
 import os
 from dotenv import load_dotenv
@@ -47,9 +43,9 @@ def _secret(key: str, default: str = "") -> str:
 class BTPConfig:
     """BTP Usage Data Management Service configuration."""
 
-    UAS_BASE_URL: str = _secret("BTP_UAS_URL", "https://uas-reporting.cfapps.eu10.hana.ondemand.com")
-    AUTH_URL: str = _secret("BTP_AUTH_URL")
-    CLIENT_ID: str = _secret("BTP_CLIENT_ID")
+    UAS_BASE_URL: str  = _secret("BTP_UAS_URL", "https://uas-reporting.cfapps.eu10.hana.ondemand.com")
+    AUTH_URL: str      = _secret("BTP_AUTH_URL")
+    CLIENT_ID: str     = _secret("BTP_CLIENT_ID")
     CLIENT_SECRET: str = _secret("BTP_CLIENT_SECRET")
     SUBACCOUNT_ID: str = _secret("BTP_SUBACCOUNT_ID")
     GLOBAL_ACCOUNT_ID: str = _secret("BTP_GLOBAL_ACCOUNT_ID")
@@ -57,8 +53,8 @@ class BTPConfig:
     @classmethod
     def validate(cls) -> None:
         missing = [k for k, v in {
-            "BTP_AUTH_URL": cls.AUTH_URL,
-            "BTP_CLIENT_ID": cls.CLIENT_ID,
+            "BTP_AUTH_URL":      cls.AUTH_URL,
+            "BTP_CLIENT_ID":     cls.CLIENT_ID,
             "BTP_CLIENT_SECRET": cls.CLIENT_SECRET,
             "BTP_SUBACCOUNT_ID": cls.SUBACCOUNT_ID,
         }.items() if not v]
@@ -73,48 +69,59 @@ class LLMConfig:
     """
     LLM backend configuration.
 
-    Set LLM_BACKEND=joule   (default) to use the SAP AI Core Orchestration
-                              Service — the same engine that powers SAP Joule.
-    Set LLM_BACKEND=aicore  to use the SAP AI Core native OpenAI-compatible client.
-    Set LLM_BACKEND=openai  to use OpenAI or any OpenAI-compatible endpoint.
+    LLM_BACKEND  — selects the backend: aicore (default), joule, openai.
+    AI_MODEL     — model name used by ALL backends (default: gpt-4o).
+
+    AICORE credentials are read from environment variables first, then from
+    platform-mounted secret files at /etc/ums/credentials/.
     """
 
-    BACKEND: str = os.getenv("LLM_BACKEND", "joule").lower()
+    BACKEND: str  = os.getenv("LLM_BACKEND", "aicore").lower()
 
-    # -- SAP AI Core Orchestration / Joule ------------------------------------
-    # AICORE_AUTH_URL, AICORE_CLIENT_ID, AICORE_CLIENT_SECRET, AICORE_API_URL,
-    # AICORE_RESOURCE_GROUP are read directly from env by the SDK.
-    JOULE_MODEL: str = os.getenv("JOULE_MODEL", "gpt-4o")
-
-    # -- SAP AI Core shared credentials (used by both joule and aicore) -------
-    AICORE_API_URL: str = os.getenv("AICORE_API_URL", "")
-    AICORE_AUTH_URL: str = os.getenv("AICORE_AUTH_URL", "")
-    AICORE_CLIENT_ID: str = os.getenv("AICORE_CLIENT_ID", "")
-    AICORE_CLIENT_SECRET: str = os.getenv("AICORE_CLIENT_SECRET", "")
-    AICORE_RESOURCE_GROUP: str = os.getenv("AICORE_RESOURCE_GROUP", "default")
-
-    # -- SAP AI Core native client --------------------------------------------
-    AICORE_DEPLOYMENT_ID: str = os.getenv("AICORE_DEPLOYMENT_ID", "")
+    # Model name used across all backends
     AICORE_MODEL: str = os.getenv("AICORE_MODEL", "gpt-4o")
 
+    # -- SAP AI Core full service key (Option A — takes priority if set) ------
+    AICORE_SERVICE_KEY: str = os.getenv("AICORE_SERVICE_KEY", "")
+
+    # -- SAP AI Core individual credentials (Option B) ------------------------
+    # Uses _secret() — reads from env vars AND /etc/ums/credentials/ files.
+    AICORE_API_URL: str        = _secret("AICORE_API_URL")
+    AICORE_AUTH_URL: str       = _secret("AICORE_AUTH_URL")
+    AICORE_CLIENT_ID: str      = _secret("AICORE_CLIENT_ID")
+    AICORE_CLIENT_SECRET: str  = _secret("AICORE_CLIENT_SECRET")
+    AICORE_RESOURCE_GROUP: str = _secret("AICORE_RESOURCE_GROUP") or "default"
+    AICORE_DEPLOYMENT_ID: str  = _secret("AICORE_DEPLOYMENT_ID")
+
     # -- OpenAI / generic OpenAI-compatible -----------------------------------
-    OPENAI_API_KEY: str = os.getenv("LLM_API_KEY", "")
+    OPENAI_API_KEY: str  = os.getenv("LLM_API_KEY", "")
     OPENAI_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.openai.com/v1")
-    OPENAI_MODEL: str = os.getenv("LLM_MODEL", "gpt-4o")
 
     @classmethod
     def validate(cls) -> None:
         if cls.BACKEND in {"joule", "aicore"}:
-            # generative-ai-hub-sdk validates AICORE_* credentials internally.
-            pass
+            if cls.AICORE_SERVICE_KEY:
+                return  # gen_ai_hub auto-detects from SERVICE_KEY
+            missing = [k for k, v in {
+                "AICORE_API_URL":       cls.AICORE_API_URL,
+                "AICORE_AUTH_URL":      cls.AICORE_AUTH_URL,
+                "AICORE_CLIENT_ID":     cls.AICORE_CLIENT_ID,
+                "AICORE_CLIENT_SECRET": cls.AICORE_CLIENT_SECRET,
+            }.items() if not v]
+            if missing:
+                raise EnvironmentError(
+                    f"AI Core backend requires either AICORE_SERVICE_KEY (full JSON) "
+                    f"or these individual fields: {', '.join(missing)}\n"
+                    "Set them as env vars, in .env, or in /etc/ums/credentials/."
+                )
         elif cls.BACKEND == "openai":
             if not cls.OPENAI_API_KEY:
                 raise EnvironmentError(
                     "Missing required environment variable: LLM_API_KEY\n"
-                    "Set LLM_BACKEND=joule to use SAP Joule / AI Core Orchestration instead."
+                    "Set LLM_BACKEND=aicore to use SAP AI Core instead."
                 )
         else:
             raise ValueError(
                 f"Unsupported LLM_BACKEND: '{cls.BACKEND}'. "
-                "Valid values are: 'joule', 'aicore', 'openai'."
+                "Valid values are: 'aicore', 'joule', 'openai'."
             )
